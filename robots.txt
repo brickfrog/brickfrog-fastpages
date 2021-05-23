@@ -1,1 +1,1 @@
-Sitemap: https://brickfrog.github.io/brickfrog-fastpages/sitemap.xml
+Sitemap: https://fp.justin.vc/sitemap.xml
