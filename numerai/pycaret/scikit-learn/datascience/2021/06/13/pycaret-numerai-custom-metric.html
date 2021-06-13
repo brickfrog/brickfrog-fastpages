@@ -1,0 +1,3366 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="twitter:card" content="summary_large_image" /><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Custom Metrics in PyCaret for Numerai | fp.justin.vc</title>
+<meta name="generator" content="Jekyll v4.1.1" />
+<meta property="og:title" content="Custom Metrics in PyCaret for Numerai" />
+<meta name="author" content="Justin Malloy" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Numerai is a data science competition that uses non-standard metrics for scoring. This post shows how to use PyCaret for AutoML with custom metrics added to it for optimization." />
+<meta property="og:description" content="Numerai is a data science competition that uses non-standard metrics for scoring. This post shows how to use PyCaret for AutoML with custom metrics added to it for optimization." />
+<link rel="canonical" href="https://fp.justin.vc/numerai/pycaret/scikit-learn/datascience/2021/06/13/pycaret-numerai-custom-metric.html" />
+<meta property="og:url" content="https://fp.justin.vc/numerai/pycaret/scikit-learn/datascience/2021/06/13/pycaret-numerai-custom-metric.html" />
+<meta property="og:site_name" content="fp.justin.vc" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-13T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"Numerai is a data science competition that uses non-standard metrics for scoring. This post shows how to use PyCaret for AutoML with custom metrics added to it for optimization.","url":"https://fp.justin.vc/numerai/pycaret/scikit-learn/datascience/2021/06/13/pycaret-numerai-custom-metric.html","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://fp.justin.vc/numerai/pycaret/scikit-learn/datascience/2021/06/13/pycaret-numerai-custom-metric.html"},"headline":"Custom Metrics in PyCaret for Numerai","dateModified":"2021-06-13T00:00:00-05:00","datePublished":"2021-06-13T00:00:00-05:00","author":{"@type":"Person","name":"Justin Malloy"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://fp.justin.vc/feed.xml" title="fp.justin.vc" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-191548033-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-191548033-2');
+</script>
+
+
+<link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Primer/15.2.0/primer.css" integrity="sha512-xTz2ys4coGAOz8vuV1NcQBkgVmKhsSEtjbqyMJbBHRplFuvKIUo6xhLHpAyPt9mfR6twHJgn9OgVLuqOvjeBhg==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css" integrity="sha512-h7nl+xz8wgDlNM4NqKEM4F1NkIRS17M9+uJwIGwuo8vGqIl4BhuCKdxjWEINm+xyrUjNCnK5dCrhM0sj+wTIXw==" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js" integrity="sha512-/CMIhXiDA3m2c9kzRyd97MTb3MC6OVnx4TElQ7fkkoRghwDf6gi41gaT1PwF270W6+J60uTmwgeRpNpJdRV6sg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js" integrity="sha512-Do7uJAaHZm5OLrIv/yN4w0iG1dbu01kzdMNnFfu/mAqgUk6Nniv2JYHcwH+cNwjqgLcqcuBBk+JRvprLVI8azg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha512-0doc9hKxR3PYwso42RD1p5ySZpzzuDiOwMrdCEh2WdJZCjcmFKc/wEnL+z8fBQrnHoiNWbo+3fiGkOYXBdQp4A==" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement( document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "[%", right: "%]", display: true},
+            {left: "$", right: "$", display: false}
+        ]}
+        );
+    });
+    </script>
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title") && (el.className != "emoji")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">fp.justin.vc</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/search/">Search</a><a class="page-link" href="/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Custom Metrics in PyCaret for Numerai</h1><p class="page-description">Numerai is a data science competition that uses non-standard metrics for scoring. This post shows how to use PyCaret for AutoML with custom metrics added to it for optimization.</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-06-13T00:00:00-05:00" itemprop="datePublished">
+        Jun 13, 2021
+      </time>• 
+          <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+            <span class="p-author h-card" itemprop="name">Justin Malloy</span></span>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      14 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i> 
+      
+        <a class="category-tags-link" href="/categories/#numerai">numerai</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/categories/#pycaret">pycaret</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/categories/#scikit-learn">scikit-learn</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/categories/#datascience">datascience</a>
+        
+      
+      </p>
+    
+
+    
+      
+        <div class="pb-5 d-flex flex-wrap flex-justify-end">
+          <div class="px-2">
+
+    <a href="https://github.com/BrickFrog/brickfrog-fastpages/tree/master/_notebooks/2021-06-13-pycaret-numerai-custom-metric.ipynb" role="button" target="_blank">
+<img class="notebook-badge-image" src="/assets/badges/github.svg" alt="View On GitHub">
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://mybinder.org/v2/gh/BrickFrog/brickfrog-fastpages/master?filepath=_notebooks%2F2021-06-13-pycaret-numerai-custom-metric.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/assets/badges/binder.svg" alt="Open In Binder"/>
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://colab.research.google.com/github/BrickFrog/brickfrog-fastpages/blob/master/_notebooks/2021-06-13-pycaret-numerai-custom-metric.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/assets/badges/colab.svg" alt="Open In Colab"/>
+    </a>
+</div>
+        </div>
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2021-06-13-pycaret-numerai-custom-metric.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="About">About<a class="anchor-link" href="#About"> </a></h1><p>I put together this notebook on how to use custom metrics with <a href="https://pycaret.org/">PyCaret</a>, specifically for the <a href="https://numer.ai/">Numerai</a> compeittion.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<details class="description">
+      <summary class="btn btn-sm" data-open="Hide Code" data-close="Show Code"></summary>
+        <p><div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">make_scorer</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">spearmanr</span><span class="p">,</span> <span class="n">pearsonr</span>
+<span class="kn">from</span> <span class="nn">pycaret.regression</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">TARGET_NAME</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;target&quot;</span>
+<span class="n">PREDICTION_NAME</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prediction&quot;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+</p>
+    </details>
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">training_data</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;numerai_training_data.csv&quot;</span><span class="p">)</span>
+<span class="n">tournament_data</span> <span class="o">=</span> <span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;numerai_tournament_data.csv&quot;</span><span class="p">)</span>
+
+<span class="c1"># Sampling for ease of demo/repeatability - obviously would use full set for competition</span>
+<span class="n">training_data</span> <span class="o">=</span> <span class="n">training_data</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+<span class="n">tournament_data</span> <span class="o">=</span> <span class="n">tournament_data</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="n">feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">training_data</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;feature&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">f</span>  <span class="o">==</span> <span class="n">TARGET_NAME</span><span class="p">]</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">training_data</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>era</th>
+      <th>data_type</th>
+      <th>feature_intelligence1</th>
+      <th>feature_intelligence2</th>
+      <th>feature_intelligence3</th>
+      <th>feature_intelligence4</th>
+      <th>feature_intelligence5</th>
+      <th>feature_intelligence6</th>
+      <th>feature_intelligence7</th>
+      <th>feature_intelligence8</th>
+      <th>feature_intelligence9</th>
+      <th>feature_intelligence10</th>
+      <th>feature_intelligence11</th>
+      <th>feature_intelligence12</th>
+      <th>feature_charisma1</th>
+      <th>feature_charisma2</th>
+      <th>feature_charisma3</th>
+      <th>feature_charisma4</th>
+      <th>feature_charisma5</th>
+      <th>feature_charisma6</th>
+      <th>feature_charisma7</th>
+      <th>feature_charisma8</th>
+      <th>feature_charisma9</th>
+      <th>feature_charisma10</th>
+      <th>feature_charisma11</th>
+      <th>feature_charisma12</th>
+      <th>feature_charisma13</th>
+      <th>feature_charisma14</th>
+      <th>feature_charisma15</th>
+      <th>feature_charisma16</th>
+      <th>feature_charisma17</th>
+      <th>feature_charisma18</th>
+      <th>feature_charisma19</th>
+      <th>feature_charisma20</th>
+      <th>feature_charisma21</th>
+      <th>feature_charisma22</th>
+      <th>feature_charisma23</th>
+      <th>feature_charisma24</th>
+      <th>feature_charisma25</th>
+      <th>feature_charisma26</th>
+      <th>feature_charisma27</th>
+      <th>feature_charisma28</th>
+      <th>feature_charisma29</th>
+      <th>feature_charisma30</th>
+      <th>feature_charisma31</th>
+      <th>feature_charisma32</th>
+      <th>feature_charisma33</th>
+      <th>feature_charisma34</th>
+      <th>feature_charisma35</th>
+      <th>feature_charisma36</th>
+      <th>feature_charisma37</th>
+      <th>feature_charisma38</th>
+      <th>feature_charisma39</th>
+      <th>feature_charisma40</th>
+      <th>feature_charisma41</th>
+      <th>feature_charisma42</th>
+      <th>feature_charisma43</th>
+      <th>feature_charisma44</th>
+      <th>feature_charisma45</th>
+      <th>feature_charisma46</th>
+      <th>feature_charisma47</th>
+      <th>feature_charisma48</th>
+      <th>feature_charisma49</th>
+      <th>feature_charisma50</th>
+      <th>feature_charisma51</th>
+      <th>feature_charisma52</th>
+      <th>feature_charisma53</th>
+      <th>feature_charisma54</th>
+      <th>feature_charisma55</th>
+      <th>feature_charisma56</th>
+      <th>feature_charisma57</th>
+      <th>feature_charisma58</th>
+      <th>feature_charisma59</th>
+      <th>feature_charisma60</th>
+      <th>feature_charisma61</th>
+      <th>feature_charisma62</th>
+      <th>feature_charisma63</th>
+      <th>feature_charisma64</th>
+      <th>feature_charisma65</th>
+      <th>feature_charisma66</th>
+      <th>feature_charisma67</th>
+      <th>feature_charisma68</th>
+      <th>feature_charisma69</th>
+      <th>feature_charisma70</th>
+      <th>feature_charisma71</th>
+      <th>feature_charisma72</th>
+      <th>feature_charisma73</th>
+      <th>feature_charisma74</th>
+      <th>feature_charisma75</th>
+      <th>feature_charisma76</th>
+      <th>feature_charisma77</th>
+      <th>feature_charisma78</th>
+      <th>feature_charisma79</th>
+      <th>feature_charisma80</th>
+      <th>feature_charisma81</th>
+      <th>feature_charisma82</th>
+      <th>feature_charisma83</th>
+      <th>feature_charisma84</th>
+      <th>feature_charisma85</th>
+      <th>feature_charisma86</th>
+      <th>feature_strength1</th>
+      <th>feature_strength2</th>
+      <th>feature_strength3</th>
+      <th>feature_strength4</th>
+      <th>feature_strength5</th>
+      <th>feature_strength6</th>
+      <th>feature_strength7</th>
+      <th>feature_strength8</th>
+      <th>feature_strength9</th>
+      <th>feature_strength10</th>
+      <th>feature_strength11</th>
+      <th>feature_strength12</th>
+      <th>feature_strength13</th>
+      <th>feature_strength14</th>
+      <th>feature_strength15</th>
+      <th>feature_strength16</th>
+      <th>feature_strength17</th>
+      <th>feature_strength18</th>
+      <th>feature_strength19</th>
+      <th>feature_strength20</th>
+      <th>feature_strength21</th>
+      <th>feature_strength22</th>
+      <th>feature_strength23</th>
+      <th>feature_strength24</th>
+      <th>feature_strength25</th>
+      <th>feature_strength26</th>
+      <th>feature_strength27</th>
+      <th>feature_strength28</th>
+      <th>feature_strength29</th>
+      <th>feature_strength30</th>
+      <th>feature_strength31</th>
+      <th>feature_strength32</th>
+      <th>feature_strength33</th>
+      <th>feature_strength34</th>
+      <th>feature_strength35</th>
+      <th>feature_strength36</th>
+      <th>feature_strength37</th>
+      <th>feature_strength38</th>
+      <th>feature_dexterity1</th>
+      <th>feature_dexterity2</th>
+      <th>feature_dexterity3</th>
+      <th>feature_dexterity4</th>
+      <th>feature_dexterity5</th>
+      <th>feature_dexterity6</th>
+      <th>feature_dexterity7</th>
+      <th>feature_dexterity8</th>
+      <th>feature_dexterity9</th>
+      <th>feature_dexterity10</th>
+      <th>feature_dexterity11</th>
+      <th>feature_dexterity12</th>
+      <th>feature_dexterity13</th>
+      <th>feature_dexterity14</th>
+      <th>feature_constitution1</th>
+      <th>feature_constitution2</th>
+      <th>feature_constitution3</th>
+      <th>feature_constitution4</th>
+      <th>feature_constitution5</th>
+      <th>feature_constitution6</th>
+      <th>feature_constitution7</th>
+      <th>feature_constitution8</th>
+      <th>feature_constitution9</th>
+      <th>feature_constitution10</th>
+      <th>feature_constitution11</th>
+      <th>feature_constitution12</th>
+      <th>feature_constitution13</th>
+      <th>feature_constitution14</th>
+      <th>feature_constitution15</th>
+      <th>feature_constitution16</th>
+      <th>feature_constitution17</th>
+      <th>feature_constitution18</th>
+      <th>feature_constitution19</th>
+      <th>feature_constitution20</th>
+      <th>feature_constitution21</th>
+      <th>feature_constitution22</th>
+      <th>feature_constitution23</th>
+      <th>feature_constitution24</th>
+      <th>feature_constitution25</th>
+      <th>feature_constitution26</th>
+      <th>feature_constitution27</th>
+      <th>feature_constitution28</th>
+      <th>feature_constitution29</th>
+      <th>feature_constitution30</th>
+      <th>feature_constitution31</th>
+      <th>feature_constitution32</th>
+      <th>feature_constitution33</th>
+      <th>feature_constitution34</th>
+      <th>feature_constitution35</th>
+      <th>feature_constitution36</th>
+      <th>feature_constitution37</th>
+      <th>feature_constitution38</th>
+      <th>feature_constitution39</th>
+      <th>feature_constitution40</th>
+      <th>feature_constitution41</th>
+      <th>feature_constitution42</th>
+      <th>feature_constitution43</th>
+      <th>feature_constitution44</th>
+      <th>feature_constitution45</th>
+      <th>feature_constitution46</th>
+      <th>feature_constitution47</th>
+      <th>feature_constitution48</th>
+      <th>feature_constitution49</th>
+      <th>feature_constitution50</th>
+      <th>feature_constitution51</th>
+      <th>feature_constitution52</th>
+      <th>feature_constitution53</th>
+      <th>feature_constitution54</th>
+      <th>feature_constitution55</th>
+      <th>feature_constitution56</th>
+      <th>feature_constitution57</th>
+      <th>feature_constitution58</th>
+      <th>feature_constitution59</th>
+      <th>feature_constitution60</th>
+      <th>feature_constitution61</th>
+      <th>feature_constitution62</th>
+      <th>feature_constitution63</th>
+      <th>feature_constitution64</th>
+      <th>feature_constitution65</th>
+      <th>feature_constitution66</th>
+      <th>feature_constitution67</th>
+      <th>feature_constitution68</th>
+      <th>feature_constitution69</th>
+      <th>feature_constitution70</th>
+      <th>feature_constitution71</th>
+      <th>feature_constitution72</th>
+      <th>feature_constitution73</th>
+      <th>feature_constitution74</th>
+      <th>feature_constitution75</th>
+      <th>feature_constitution76</th>
+      <th>feature_constitution77</th>
+      <th>feature_constitution78</th>
+      <th>feature_constitution79</th>
+      <th>feature_constitution80</th>
+      <th>feature_constitution81</th>
+      <th>feature_constitution82</th>
+      <th>feature_constitution83</th>
+      <th>feature_constitution84</th>
+      <th>feature_constitution85</th>
+      <th>feature_constitution86</th>
+      <th>feature_constitution87</th>
+      <th>feature_constitution88</th>
+      <th>feature_constitution89</th>
+      <th>feature_constitution90</th>
+      <th>feature_constitution91</th>
+      <th>feature_constitution92</th>
+      <th>feature_constitution93</th>
+      <th>feature_constitution94</th>
+      <th>feature_constitution95</th>
+      <th>feature_constitution96</th>
+      <th>feature_constitution97</th>
+      <th>feature_constitution98</th>
+      <th>feature_constitution99</th>
+      <th>feature_constitution100</th>
+      <th>feature_constitution101</th>
+      <th>feature_constitution102</th>
+      <th>feature_constitution103</th>
+      <th>feature_constitution104</th>
+      <th>feature_constitution105</th>
+      <th>feature_constitution106</th>
+      <th>feature_constitution107</th>
+      <th>feature_constitution108</th>
+      <th>feature_constitution109</th>
+      <th>feature_constitution110</th>
+      <th>feature_constitution111</th>
+      <th>feature_constitution112</th>
+      <th>feature_constitution113</th>
+      <th>feature_constitution114</th>
+      <th>feature_wisdom1</th>
+      <th>feature_wisdom2</th>
+      <th>feature_wisdom3</th>
+      <th>feature_wisdom4</th>
+      <th>feature_wisdom5</th>
+      <th>feature_wisdom6</th>
+      <th>feature_wisdom7</th>
+      <th>feature_wisdom8</th>
+      <th>feature_wisdom9</th>
+      <th>feature_wisdom10</th>
+      <th>feature_wisdom11</th>
+      <th>feature_wisdom12</th>
+      <th>feature_wisdom13</th>
+      <th>feature_wisdom14</th>
+      <th>feature_wisdom15</th>
+      <th>feature_wisdom16</th>
+      <th>feature_wisdom17</th>
+      <th>feature_wisdom18</th>
+      <th>feature_wisdom19</th>
+      <th>feature_wisdom20</th>
+      <th>feature_wisdom21</th>
+      <th>feature_wisdom22</th>
+      <th>feature_wisdom23</th>
+      <th>feature_wisdom24</th>
+      <th>feature_wisdom25</th>
+      <th>feature_wisdom26</th>
+      <th>feature_wisdom27</th>
+      <th>feature_wisdom28</th>
+      <th>feature_wisdom29</th>
+      <th>feature_wisdom30</th>
+      <th>feature_wisdom31</th>
+      <th>feature_wisdom32</th>
+      <th>feature_wisdom33</th>
+      <th>feature_wisdom34</th>
+      <th>feature_wisdom35</th>
+      <th>feature_wisdom36</th>
+      <th>feature_wisdom37</th>
+      <th>feature_wisdom38</th>
+      <th>feature_wisdom39</th>
+      <th>feature_wisdom40</th>
+      <th>feature_wisdom41</th>
+      <th>feature_wisdom42</th>
+      <th>feature_wisdom43</th>
+      <th>feature_wisdom44</th>
+      <th>feature_wisdom45</th>
+      <th>feature_wisdom46</th>
+      <th>target</th>
+    </tr>
+    <tr>
+      <th>id</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>n6346c8f8784a565</th>
+      <td>era75</td>
+      <td>train</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+    </tr>
+    <tr>
+      <th>n46dccf4bc8006a8</th>
+      <td>era75</td>
+      <td>train</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+    </tr>
+    <tr>
+      <th>n3e1605f37041c0c</th>
+      <td>era6</td>
+      <td>train</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+    </tr>
+    <tr>
+      <th>na662ad0039c3091</th>
+      <td>era107</td>
+      <td>train</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.50</td>
+    </tr>
+    <tr>
+      <th>nf324eff3bcbf017</th>
+      <td>era99</td>
+      <td>train</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>1.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.0</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.75</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>0.00</td>
+      <td>0.5</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.5</td>
+      <td>1.00</td>
+      <td>1.00</td>
+      <td>0.5</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>0.50</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.50</td>
+      <td>1.00</td>
+      <td>0.50</td>
+      <td>1.0</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.75</td>
+      <td>0.5</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.75</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.50</td>
+      <td>0.25</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+      <td>0.50</td>
+      <td>0.00</td>
+      <td>1.00</td>
+      <td>0.00</td>
+      <td>0.25</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">reg</span> <span class="o">=</span> <span class="n">setup</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">[</span><span class="n">feature_names</span><span class="p">],</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">TARGET_NAME</span><span class="p">,</span>
+    <span class="n">session_id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="n">silent</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+<details class="description">
+      <summary class="btn btn-sm" data-open="Hide Output" data-close="Show Output"></summary>
+        <p>
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+<style type="text/css">
+</style><table id="T_8241d_"><thead>    <tr>        <th class="blank level0"></th>        <th class="col_heading level0 col0">Description</th>        <th class="col_heading level0 col1">Value</th>    </tr></thead><tbody>
+                <tr>
+                        <th id="T_8241d_level0_row0" class="row_heading level0 row0">0</th>
+                        <td id="T_8241d_row0_col0" class="data row0 col0">session_id</td>
+                        <td id="T_8241d_row0_col1" class="data row0 col1">42</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row1" class="row_heading level0 row1">1</th>
+                        <td id="T_8241d_row1_col0" class="data row1 col0">Target</td>
+                        <td id="T_8241d_row1_col1" class="data row1 col1">target</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row2" class="row_heading level0 row2">2</th>
+                        <td id="T_8241d_row2_col0" class="data row2 col0">Original Data</td>
+                        <td id="T_8241d_row2_col1" class="data row2 col1">(500, 311)</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row3" class="row_heading level0 row3">3</th>
+                        <td id="T_8241d_row3_col0" class="data row3 col0">Missing Values</td>
+                        <td id="T_8241d_row3_col1" class="data row3 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row4" class="row_heading level0 row4">4</th>
+                        <td id="T_8241d_row4_col0" class="data row4 col0">Numeric Features</td>
+                        <td id="T_8241d_row4_col1" class="data row4 col1">310</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row5" class="row_heading level0 row5">5</th>
+                        <td id="T_8241d_row5_col0" class="data row5 col0">Categorical Features</td>
+                        <td id="T_8241d_row5_col1" class="data row5 col1">0</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row6" class="row_heading level0 row6">6</th>
+                        <td id="T_8241d_row6_col0" class="data row6 col0">Ordinal Features</td>
+                        <td id="T_8241d_row6_col1" class="data row6 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row7" class="row_heading level0 row7">7</th>
+                        <td id="T_8241d_row7_col0" class="data row7 col0">High Cardinality Features</td>
+                        <td id="T_8241d_row7_col1" class="data row7 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row8" class="row_heading level0 row8">8</th>
+                        <td id="T_8241d_row8_col0" class="data row8 col0">High Cardinality Method</td>
+                        <td id="T_8241d_row8_col1" class="data row8 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row9" class="row_heading level0 row9">9</th>
+                        <td id="T_8241d_row9_col0" class="data row9 col0">Transformed Train Set</td>
+                        <td id="T_8241d_row9_col1" class="data row9 col1">(349, 310)</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row10" class="row_heading level0 row10">10</th>
+                        <td id="T_8241d_row10_col0" class="data row10 col0">Transformed Test Set</td>
+                        <td id="T_8241d_row10_col1" class="data row10 col1">(151, 310)</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row11" class="row_heading level0 row11">11</th>
+                        <td id="T_8241d_row11_col0" class="data row11 col0">Shuffle Train-Test</td>
+                        <td id="T_8241d_row11_col1" class="data row11 col1">True</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row12" class="row_heading level0 row12">12</th>
+                        <td id="T_8241d_row12_col0" class="data row12 col0">Stratify Train-Test</td>
+                        <td id="T_8241d_row12_col1" class="data row12 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row13" class="row_heading level0 row13">13</th>
+                        <td id="T_8241d_row13_col0" class="data row13 col0">Fold Generator</td>
+                        <td id="T_8241d_row13_col1" class="data row13 col1">KFold</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row14" class="row_heading level0 row14">14</th>
+                        <td id="T_8241d_row14_col0" class="data row14 col0">Fold Number</td>
+                        <td id="T_8241d_row14_col1" class="data row14 col1">10</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row15" class="row_heading level0 row15">15</th>
+                        <td id="T_8241d_row15_col0" class="data row15 col0">CPU Jobs</td>
+                        <td id="T_8241d_row15_col1" class="data row15 col1">-1</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row16" class="row_heading level0 row16">16</th>
+                        <td id="T_8241d_row16_col0" class="data row16 col0">Use GPU</td>
+                        <td id="T_8241d_row16_col1" class="data row16 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row17" class="row_heading level0 row17">17</th>
+                        <td id="T_8241d_row17_col0" class="data row17 col0">Log Experiment</td>
+                        <td id="T_8241d_row17_col1" class="data row17 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row18" class="row_heading level0 row18">18</th>
+                        <td id="T_8241d_row18_col0" class="data row18 col0">Experiment Name</td>
+                        <td id="T_8241d_row18_col1" class="data row18 col1">reg-default-name</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row19" class="row_heading level0 row19">19</th>
+                        <td id="T_8241d_row19_col0" class="data row19 col0">USI</td>
+                        <td id="T_8241d_row19_col1" class="data row19 col1">4790</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row20" class="row_heading level0 row20">20</th>
+                        <td id="T_8241d_row20_col0" class="data row20 col0">Imputation Type</td>
+                        <td id="T_8241d_row20_col1" class="data row20 col1">simple</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row21" class="row_heading level0 row21">21</th>
+                        <td id="T_8241d_row21_col0" class="data row21 col0">Iterative Imputation Iteration</td>
+                        <td id="T_8241d_row21_col1" class="data row21 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row22" class="row_heading level0 row22">22</th>
+                        <td id="T_8241d_row22_col0" class="data row22 col0">Numeric Imputer</td>
+                        <td id="T_8241d_row22_col1" class="data row22 col1">mean</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row23" class="row_heading level0 row23">23</th>
+                        <td id="T_8241d_row23_col0" class="data row23 col0">Iterative Imputation Numeric Model</td>
+                        <td id="T_8241d_row23_col1" class="data row23 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row24" class="row_heading level0 row24">24</th>
+                        <td id="T_8241d_row24_col0" class="data row24 col0">Categorical Imputer</td>
+                        <td id="T_8241d_row24_col1" class="data row24 col1">constant</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row25" class="row_heading level0 row25">25</th>
+                        <td id="T_8241d_row25_col0" class="data row25 col0">Iterative Imputation Categorical Model</td>
+                        <td id="T_8241d_row25_col1" class="data row25 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row26" class="row_heading level0 row26">26</th>
+                        <td id="T_8241d_row26_col0" class="data row26 col0">Unknown Categoricals Handling</td>
+                        <td id="T_8241d_row26_col1" class="data row26 col1">least_frequent</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row27" class="row_heading level0 row27">27</th>
+                        <td id="T_8241d_row27_col0" class="data row27 col0">Normalize</td>
+                        <td id="T_8241d_row27_col1" class="data row27 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row28" class="row_heading level0 row28">28</th>
+                        <td id="T_8241d_row28_col0" class="data row28 col0">Normalize Method</td>
+                        <td id="T_8241d_row28_col1" class="data row28 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row29" class="row_heading level0 row29">29</th>
+                        <td id="T_8241d_row29_col0" class="data row29 col0">Transformation</td>
+                        <td id="T_8241d_row29_col1" class="data row29 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row30" class="row_heading level0 row30">30</th>
+                        <td id="T_8241d_row30_col0" class="data row30 col0">Transformation Method</td>
+                        <td id="T_8241d_row30_col1" class="data row30 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row31" class="row_heading level0 row31">31</th>
+                        <td id="T_8241d_row31_col0" class="data row31 col0">PCA</td>
+                        <td id="T_8241d_row31_col1" class="data row31 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row32" class="row_heading level0 row32">32</th>
+                        <td id="T_8241d_row32_col0" class="data row32 col0">PCA Method</td>
+                        <td id="T_8241d_row32_col1" class="data row32 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row33" class="row_heading level0 row33">33</th>
+                        <td id="T_8241d_row33_col0" class="data row33 col0">PCA Components</td>
+                        <td id="T_8241d_row33_col1" class="data row33 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row34" class="row_heading level0 row34">34</th>
+                        <td id="T_8241d_row34_col0" class="data row34 col0">Ignore Low Variance</td>
+                        <td id="T_8241d_row34_col1" class="data row34 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row35" class="row_heading level0 row35">35</th>
+                        <td id="T_8241d_row35_col0" class="data row35 col0">Combine Rare Levels</td>
+                        <td id="T_8241d_row35_col1" class="data row35 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row36" class="row_heading level0 row36">36</th>
+                        <td id="T_8241d_row36_col0" class="data row36 col0">Rare Level Threshold</td>
+                        <td id="T_8241d_row36_col1" class="data row36 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row37" class="row_heading level0 row37">37</th>
+                        <td id="T_8241d_row37_col0" class="data row37 col0">Numeric Binning</td>
+                        <td id="T_8241d_row37_col1" class="data row37 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row38" class="row_heading level0 row38">38</th>
+                        <td id="T_8241d_row38_col0" class="data row38 col0">Remove Outliers</td>
+                        <td id="T_8241d_row38_col1" class="data row38 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row39" class="row_heading level0 row39">39</th>
+                        <td id="T_8241d_row39_col0" class="data row39 col0">Outliers Threshold</td>
+                        <td id="T_8241d_row39_col1" class="data row39 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row40" class="row_heading level0 row40">40</th>
+                        <td id="T_8241d_row40_col0" class="data row40 col0">Remove Multicollinearity</td>
+                        <td id="T_8241d_row40_col1" class="data row40 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row41" class="row_heading level0 row41">41</th>
+                        <td id="T_8241d_row41_col0" class="data row41 col0">Multicollinearity Threshold</td>
+                        <td id="T_8241d_row41_col1" class="data row41 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row42" class="row_heading level0 row42">42</th>
+                        <td id="T_8241d_row42_col0" class="data row42 col0">Clustering</td>
+                        <td id="T_8241d_row42_col1" class="data row42 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row43" class="row_heading level0 row43">43</th>
+                        <td id="T_8241d_row43_col0" class="data row43 col0">Clustering Iteration</td>
+                        <td id="T_8241d_row43_col1" class="data row43 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row44" class="row_heading level0 row44">44</th>
+                        <td id="T_8241d_row44_col0" class="data row44 col0">Polynomial Features</td>
+                        <td id="T_8241d_row44_col1" class="data row44 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row45" class="row_heading level0 row45">45</th>
+                        <td id="T_8241d_row45_col0" class="data row45 col0">Polynomial Degree</td>
+                        <td id="T_8241d_row45_col1" class="data row45 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row46" class="row_heading level0 row46">46</th>
+                        <td id="T_8241d_row46_col0" class="data row46 col0">Trignometry Features</td>
+                        <td id="T_8241d_row46_col1" class="data row46 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row47" class="row_heading level0 row47">47</th>
+                        <td id="T_8241d_row47_col0" class="data row47 col0">Polynomial Threshold</td>
+                        <td id="T_8241d_row47_col1" class="data row47 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row48" class="row_heading level0 row48">48</th>
+                        <td id="T_8241d_row48_col0" class="data row48 col0">Group Features</td>
+                        <td id="T_8241d_row48_col1" class="data row48 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row49" class="row_heading level0 row49">49</th>
+                        <td id="T_8241d_row49_col0" class="data row49 col0">Feature Selection</td>
+                        <td id="T_8241d_row49_col1" class="data row49 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row50" class="row_heading level0 row50">50</th>
+                        <td id="T_8241d_row50_col0" class="data row50 col0">Feature Selection Method</td>
+                        <td id="T_8241d_row50_col1" class="data row50 col1">classic</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row51" class="row_heading level0 row51">51</th>
+                        <td id="T_8241d_row51_col0" class="data row51 col0">Features Selection Threshold</td>
+                        <td id="T_8241d_row51_col1" class="data row51 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row52" class="row_heading level0 row52">52</th>
+                        <td id="T_8241d_row52_col0" class="data row52 col0">Feature Interaction</td>
+                        <td id="T_8241d_row52_col1" class="data row52 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row53" class="row_heading level0 row53">53</th>
+                        <td id="T_8241d_row53_col0" class="data row53 col0">Feature Ratio</td>
+                        <td id="T_8241d_row53_col1" class="data row53 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row54" class="row_heading level0 row54">54</th>
+                        <td id="T_8241d_row54_col0" class="data row54 col0">Interaction Threshold</td>
+                        <td id="T_8241d_row54_col1" class="data row54 col1">None</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row55" class="row_heading level0 row55">55</th>
+                        <td id="T_8241d_row55_col0" class="data row55 col0">Transform Target</td>
+                        <td id="T_8241d_row55_col1" class="data row55 col1">False</td>
+            </tr>
+            <tr>
+                        <th id="T_8241d_level0_row56" class="row_heading level0 row56">56</th>
+                        <td id="T_8241d_row56_col0" class="data row56 col0">Transform Target Method</td>
+                        <td id="T_8241d_row56_col1" class="data row56 col1">box-cox</td>
+            </tr>
+    </tbody></table>
+</div>
+
+</div>
+
+</div>
+</div>
+</p>
+    </details>
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Adding-Metrics">Adding Metrics<a class="anchor-link" href="#Adding-Metrics"> </a></h2><p>PyCaret makes use of scikit-learn's <code>make_scorer</code>. After initialization of the PyCaret regressor/classifier module, you simply utilize <code>add_metric</code> to attach them to PyCaret's list of metrics.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Submissions are scored by spearman correlation</span>
+
+<span class="k">def</span> <span class="nf">spearman</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+    <span class="n">ret_score</span> <span class="o">=</span> <span class="n">spearmanr</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ret_score</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ret_score</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+
+<span class="k">def</span> <span class="nf">pearson</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">):</span>
+    <span class="n">ret_score</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">ret_score</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ret_score</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+<span class="n">spearman_corr</span> <span class="o">=</span> <span class="n">make_scorer</span><span class="p">(</span><span class="n">spearman</span><span class="p">,</span> <span class="n">needs_proba</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pearson_corr</span> <span class="o">=</span> <span class="n">make_scorer</span><span class="p">(</span><span class="n">pearson</span><span class="p">,</span> <span class="n">needs_proba</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">add_metric</span><span class="p">(</span><span class="s1">&#39;pearson&#39;</span><span class="p">,</span> <span class="s1">&#39;CORR&#39;</span><span class="p">,</span> <span class="n">pearson</span><span class="p">)</span>
+<span class="n">add_metric</span><span class="p">(</span><span class="s1">&#39;spear&#39;</span><span class="p">,</span> <span class="s1">&#39;SPEAR&#39;</span><span class="p">,</span> <span class="n">spearman</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>Name                                                     SPEAR
+Display Name                                             SPEAR
+Score Function       &lt;function spearman at 0x0000019EFE4F0310&gt;
+Scorer                                   make_scorer(spearman)
+Target                                                    pred
+Args                                                        {}
+Greater is Better                                         True
+Custom                                                    True
+Name: spear, dtype: object</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">get_metrics</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped="">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Name</th>
+      <th>Display Name</th>
+      <th>Score Function</th>
+      <th>Scorer</th>
+      <th>Target</th>
+      <th>Args</th>
+      <th>Greater is Better</th>
+      <th>Custom</th>
+    </tr>
+    <tr>
+      <th>ID</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>mae</th>
+      <td>MAE</td>
+      <td>MAE</td>
+      <td>&lt;function mean_absolute_error at 0x0000019EF9A...</td>
+      <td>neg_mean_absolute_error</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>mse</th>
+      <td>MSE</td>
+      <td>MSE</td>
+      <td>&lt;function mean_squared_error at 0x0000019EF9A0...</td>
+      <td>neg_mean_squared_error</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>rmse</th>
+      <td>RMSE</td>
+      <td>RMSE</td>
+      <td>&lt;function mean_squared_error at 0x0000019EF9A0...</td>
+      <td>neg_root_mean_squared_error</td>
+      <td>pred</td>
+      <td>{'squared': False}</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>r2</th>
+      <td>R2</td>
+      <td>R2</td>
+      <td>&lt;function r2_score at 0x0000019EF9A05A60&gt;</td>
+      <td>r2</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>rmsle</th>
+      <td>RMSLE</td>
+      <td>RMSLE</td>
+      <td>&lt;function RMSLEMetricContainer.__init__.&lt;local...</td>
+      <td>make_scorer(root_mean_squared_log_error, great...</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>mape</th>
+      <td>MAPE</td>
+      <td>MAPE</td>
+      <td>&lt;function MAPEMetricContainer.__init__.&lt;locals...</td>
+      <td>make_scorer(mean_absolute_percentage_error, gr...</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>pearson</th>
+      <td>CORR</td>
+      <td>CORR</td>
+      <td>&lt;function pearson at 0x0000019EFE4F0550&gt;</td>
+      <td>make_scorer(pearson)</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>spear</th>
+      <td>SPEAR</td>
+      <td>SPEAR</td>
+      <td>&lt;function spearman at 0x0000019EFE4F0310&gt;</td>
+      <td>make_scorer(spearman)</td>
+      <td>pred</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Running-the-Models-with-New-Metrics">Running the Models with New Metrics<a class="anchor-link" href="#Running-the-Models-with-New-Metrics"> </a></h2><p>Adding these metrics allow them to be shown in all new model creation by PyCaret. Simply <code>optimize</code> when using <code>tune_model</code> and it will optimize by your new metric.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xgb</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;xgboost&#39;</span><span class="p">,</span> <span class="n">fold</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+<style type="text/css">
+#T_cc94f_row5_col0,#T_cc94f_row5_col1,#T_cc94f_row5_col2,#T_cc94f_row5_col3,#T_cc94f_row5_col4,#T_cc94f_row5_col5,#T_cc94f_row5_col6,#T_cc94f_row5_col7{
+            background:  yellow;
+        }</style><table id="T_cc94f_"><thead>    <tr>        <th class="blank level0"></th>        <th class="col_heading level0 col0">MAE</th>        <th class="col_heading level0 col1">MSE</th>        <th class="col_heading level0 col2">RMSE</th>        <th class="col_heading level0 col3">R2</th>        <th class="col_heading level0 col4">RMSLE</th>        <th class="col_heading level0 col5">MAPE</th>        <th class="col_heading level0 col6">CORR</th>        <th class="col_heading level0 col7">SPEAR</th>    </tr></thead><tbody>
+                <tr>
+                        <th id="T_cc94f_level0_row0" class="row_heading level0 row0">0</th>
+                        <td id="T_cc94f_row0_col0" class="data row0 col0">0.1677</td>
+                        <td id="T_cc94f_row0_col1" class="data row0 col1">0.0580</td>
+                        <td id="T_cc94f_row0_col2" class="data row0 col2">0.2409</td>
+                        <td id="T_cc94f_row0_col3" class="data row0 col3">-0.3001</td>
+                        <td id="T_cc94f_row0_col4" class="data row0 col4">0.1686</td>
+                        <td id="T_cc94f_row0_col5" class="data row0 col5">0.3182</td>
+                        <td id="T_cc94f_row0_col6" class="data row0 col6">0.0235</td>
+                        <td id="T_cc94f_row0_col7" class="data row0 col7">0.1182</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row1" class="row_heading level0 row1">1</th>
+                        <td id="T_cc94f_row1_col0" class="data row1 col0">0.2180</td>
+                        <td id="T_cc94f_row1_col1" class="data row1 col1">0.0798</td>
+                        <td id="T_cc94f_row1_col2" class="data row1 col2">0.2825</td>
+                        <td id="T_cc94f_row1_col3" class="data row1 col3">-0.7472</td>
+                        <td id="T_cc94f_row1_col4" class="data row1 col4">0.1818</td>
+                        <td id="T_cc94f_row1_col5" class="data row1 col5">0.3694</td>
+                        <td id="T_cc94f_row1_col6" class="data row1 col6">-0.1615</td>
+                        <td id="T_cc94f_row1_col7" class="data row1 col7">-0.1551</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row2" class="row_heading level0 row2">2</th>
+                        <td id="T_cc94f_row2_col0" class="data row2 col0">0.2124</td>
+                        <td id="T_cc94f_row2_col1" class="data row2 col1">0.0680</td>
+                        <td id="T_cc94f_row2_col2" class="data row2 col2">0.2607</td>
+                        <td id="T_cc94f_row2_col3" class="data row2 col3">-0.1435</td>
+                        <td id="T_cc94f_row2_col4" class="data row2 col4">0.1697</td>
+                        <td id="T_cc94f_row2_col5" class="data row2 col5">0.4688</td>
+                        <td id="T_cc94f_row2_col6" class="data row2 col6">0.0718</td>
+                        <td id="T_cc94f_row2_col7" class="data row2 col7">0.0193</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row3" class="row_heading level0 row3">3</th>
+                        <td id="T_cc94f_row3_col0" class="data row3 col0">0.1803</td>
+                        <td id="T_cc94f_row3_col1" class="data row3 col1">0.0590</td>
+                        <td id="T_cc94f_row3_col2" class="data row3 col2">0.2429</td>
+                        <td id="T_cc94f_row3_col3" class="data row3 col3">-0.1409</td>
+                        <td id="T_cc94f_row3_col4" class="data row3 col4">0.1754</td>
+                        <td id="T_cc94f_row3_col5" class="data row3 col5">0.3664</td>
+                        <td id="T_cc94f_row3_col6" class="data row3 col6">0.2891</td>
+                        <td id="T_cc94f_row3_col7" class="data row3 col7">0.2976</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row4" class="row_heading level0 row4">4</th>
+                        <td id="T_cc94f_row4_col0" class="data row4 col0">0.1930</td>
+                        <td id="T_cc94f_row4_col1" class="data row4 col1">0.0593</td>
+                        <td id="T_cc94f_row4_col2" class="data row4 col2">0.2435</td>
+                        <td id="T_cc94f_row4_col3" class="data row4 col3">-0.0715</td>
+                        <td id="T_cc94f_row4_col4" class="data row4 col4">0.1689</td>
+                        <td id="T_cc94f_row4_col5" class="data row4 col5">0.3733</td>
+                        <td id="T_cc94f_row4_col6" class="data row4 col6">0.1697</td>
+                        <td id="T_cc94f_row4_col7" class="data row4 col7">0.1444</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row5" class="row_heading level0 row5">Mean</th>
+                        <td id="T_cc94f_row5_col0" class="data row5 col0">0.1943</td>
+                        <td id="T_cc94f_row5_col1" class="data row5 col1">0.0648</td>
+                        <td id="T_cc94f_row5_col2" class="data row5 col2">0.2541</td>
+                        <td id="T_cc94f_row5_col3" class="data row5 col3">-0.2807</td>
+                        <td id="T_cc94f_row5_col4" class="data row5 col4">0.1729</td>
+                        <td id="T_cc94f_row5_col5" class="data row5 col5">0.3792</td>
+                        <td id="T_cc94f_row5_col6" class="data row5 col6">0.0785</td>
+                        <td id="T_cc94f_row5_col7" class="data row5 col7">0.0849</td>
+            </tr>
+            <tr>
+                        <th id="T_cc94f_level0_row6" class="row_heading level0 row6">SD</th>
+                        <td id="T_cc94f_row6_col0" class="data row6 col0">0.0190</td>
+                        <td id="T_cc94f_row6_col1" class="data row6 col1">0.0083</td>
+                        <td id="T_cc94f_row6_col2" class="data row6 col2">0.0159</td>
+                        <td id="T_cc94f_row6_col3" class="data row6 col3">0.2450</td>
+                        <td id="T_cc94f_row6_col4" class="data row6 col4">0.0051</td>
+                        <td id="T_cc94f_row6_col5" class="data row6 col5">0.0491</td>
+                        <td id="T_cc94f_row6_col6" class="data row6 col6">0.1506</td>
+                        <td id="T_cc94f_row6_col7" class="data row6 col7">0.1495</td>
+            </tr>
+    </tbody></table>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tuned_xgb</span> <span class="o">=</span> <span class="n">tune_model</span><span class="p">(</span><span class="n">xgb</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="s1">&#39;spear&#39;</span><span class="p">,</span> <span class="n">fold</span><span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">n_iter</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">search_library</span><span class="o">=</span><span class="s2">&quot;optuna&quot;</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+<style type="text/css">
+#T_90d1c_row5_col0,#T_90d1c_row5_col1,#T_90d1c_row5_col2,#T_90d1c_row5_col3,#T_90d1c_row5_col4,#T_90d1c_row5_col5,#T_90d1c_row5_col6,#T_90d1c_row5_col7{
+            background:  yellow;
+        }</style><table id="T_90d1c_"><thead>    <tr>        <th class="blank level0"></th>        <th class="col_heading level0 col0">MAE</th>        <th class="col_heading level0 col1">MSE</th>        <th class="col_heading level0 col2">RMSE</th>        <th class="col_heading level0 col3">R2</th>        <th class="col_heading level0 col4">RMSLE</th>        <th class="col_heading level0 col5">MAPE</th>        <th class="col_heading level0 col6">CORR</th>        <th class="col_heading level0 col7">SPEAR</th>    </tr></thead><tbody>
+                <tr>
+                        <th id="T_90d1c_level0_row0" class="row_heading level0 row0">0</th>
+                        <td id="T_90d1c_row0_col0" class="data row0 col0">0.1286</td>
+                        <td id="T_90d1c_row0_col1" class="data row0 col1">0.0446</td>
+                        <td id="T_90d1c_row0_col2" class="data row0 col2">0.2113</td>
+                        <td id="T_90d1c_row0_col3" class="data row0 col3">-0.0000</td>
+                        <td id="T_90d1c_row0_col4" class="data row0 col4">0.1475</td>
+                        <td id="T_90d1c_row0_col5" class="data row0 col5">0.2349</td>
+                        <td id="T_90d1c_row0_col6" class="data row0 col6">-0.0111</td>
+                        <td id="T_90d1c_row0_col7" class="data row0 col7">0.0088</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row1" class="row_heading level0 row1">1</th>
+                        <td id="T_90d1c_row1_col0" class="data row1 col0">0.1714</td>
+                        <td id="T_90d1c_row1_col1" class="data row1 col1">0.0571</td>
+                        <td id="T_90d1c_row1_col2" class="data row1 col2">0.2390</td>
+                        <td id="T_90d1c_row1_col3" class="data row1 col3">-0.2511</td>
+                        <td id="T_90d1c_row1_col4" class="data row1 col4">0.1498</td>
+                        <td id="T_90d1c_row1_col5" class="data row1 col5">0.2730</td>
+                        <td id="T_90d1c_row1_col6" class="data row1 col6">0.0715</td>
+                        <td id="T_90d1c_row1_col7" class="data row1 col7">0.0511</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row2" class="row_heading level0 row2">2</th>
+                        <td id="T_90d1c_row2_col0" class="data row2 col0">0.1714</td>
+                        <td id="T_90d1c_row2_col1" class="data row2 col1">0.0607</td>
+                        <td id="T_90d1c_row2_col2" class="data row2 col2">0.2464</td>
+                        <td id="T_90d1c_row2_col3" class="data row2 col3">-0.0215</td>
+                        <td id="T_90d1c_row2_col4" class="data row2 col4">0.1575</td>
+                        <td id="T_90d1c_row2_col5" class="data row2 col5">0.3648</td>
+                        <td id="T_90d1c_row2_col6" class="data row2 col6">0.0867</td>
+                        <td id="T_90d1c_row2_col7" class="data row2 col7">0.0992</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row3" class="row_heading level0 row3">3</th>
+                        <td id="T_90d1c_row3_col0" class="data row3 col0">0.1500</td>
+                        <td id="T_90d1c_row3_col1" class="data row3 col1">0.0536</td>
+                        <td id="T_90d1c_row3_col2" class="data row3 col2">0.2315</td>
+                        <td id="T_90d1c_row3_col3" class="data row3 col3">-0.0356</td>
+                        <td id="T_90d1c_row3_col4" class="data row3 col4">0.1668</td>
+                        <td id="T_90d1c_row3_col5" class="data row3 col5">0.3047</td>
+                        <td id="T_90d1c_row3_col6" class="data row3 col6">0.0144</td>
+                        <td id="T_90d1c_row3_col7" class="data row3 col7">0.0618</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row4" class="row_heading level0 row4">4</th>
+                        <td id="T_90d1c_row4_col0" class="data row4 col0">0.1667</td>
+                        <td id="T_90d1c_row4_col1" class="data row4 col1">0.0562</td>
+                        <td id="T_90d1c_row4_col2" class="data row4 col2">0.2370</td>
+                        <td id="T_90d1c_row4_col3" class="data row4 col3">-0.0152</td>
+                        <td id="T_90d1c_row4_col4" class="data row4 col4">0.1618</td>
+                        <td id="T_90d1c_row4_col5" class="data row4 col5">0.2975</td>
+                        <td id="T_90d1c_row4_col6" class="data row4 col6">0.1831</td>
+                        <td id="T_90d1c_row4_col7" class="data row4 col7">0.1981</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row5" class="row_heading level0 row5">Mean</th>
+                        <td id="T_90d1c_row5_col0" class="data row5 col0">0.1576</td>
+                        <td id="T_90d1c_row5_col1" class="data row5 col1">0.0544</td>
+                        <td id="T_90d1c_row5_col2" class="data row5 col2">0.2330</td>
+                        <td id="T_90d1c_row5_col3" class="data row5 col3">-0.0647</td>
+                        <td id="T_90d1c_row5_col4" class="data row5 col4">0.1567</td>
+                        <td id="T_90d1c_row5_col5" class="data row5 col5">0.2950</td>
+                        <td id="T_90d1c_row5_col6" class="data row5 col6">0.0689</td>
+                        <td id="T_90d1c_row5_col7" class="data row5 col7">0.0838</td>
+            </tr>
+            <tr>
+                        <th id="T_90d1c_level0_row6" class="row_heading level0 row6">SD</th>
+                        <td id="T_90d1c_row6_col0" class="data row6 col0">0.0165</td>
+                        <td id="T_90d1c_row6_col1" class="data row6 col1">0.0054</td>
+                        <td id="T_90d1c_row6_col2" class="data row6 col2">0.0119</td>
+                        <td id="T_90d1c_row6_col3" class="data row6 col3">0.0939</td>
+                        <td id="T_90d1c_row6_col4" class="data row6 col4">0.0072</td>
+                        <td id="T_90d1c_row6_col5" class="data row6 col5">0.0426</td>
+                        <td id="T_90d1c_row6_col6" class="data row6 col6">0.0674</td>
+                        <td id="T_90d1c_row6_col7" class="data row6 col7">0.0640</td>
+            </tr>
+    </tbody></table>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tournament_data</span><span class="p">[</span><span class="n">PREDICTION_NAME</span><span class="p">]</span> <span class="o">=</span> <span class="n">tuned_xgb</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">tournament_data</span><span class="p">[</span><span class="n">feature_names</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tournament_data</span><span class="p">[</span><span class="n">PREDICTION_NAME</span><span class="p">]</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&quot;submission.csv&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><div class="flash">
+    <svg class="octicon octicon-info octicon octicon-info octicon octicon-info" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 6a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+    <strong>Note: </strong>For a more in-depth treatment of Numerai in general, please refer to their <a href="https://numer.ai/notebook">sample notebook</a>
+</div></p>
+
+</div>
+</div>
+</div>
+</div>
+
+
+
+  </div><!-- from https://github.com/utterance/utterances -->
+<script src="https://utteranc.es/client.js"
+        repo="BrickFrog/brickfrog-fastpages"
+        issue-term="title"
+        label="blogpost-comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script><a class="u-url" href="/numerai/pycaret/scikit-learn/datascience/2021/06/13/pycaret-numerai-custom-metric.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p></p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/brickfrog" title="brickfrog"><svg class="svg-icon grey"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
