@@ -16,6 +16,17 @@
   
 
   
+      ,"page1": {
+          "title": "Justin.vc",
+          "content": "",
+          "url": "https://fp.justin.vc/_pages/about.html",
+          "relUrl": "/_pages/about.html",
+          "date": ""
+      }
+      
+  
+
+  
 
   
   
@@ -31,13 +42,21 @@
   
 
   
+      ,"page8": {
+          "title": "",
+          "content": "{“/_pages/about.html”:”https://justin.vc”} .",
+          "url": "https://fp.justin.vc/redirects.json",
+          "relUrl": "/redirects.json",
+          "date": ""
+      }
+      
   
 
   
   
 
   
-      ,"page9": {
+      ,"page10": {
           "title": "",
           "content": "Sitemap: {{ “sitemap.xml” | absolute_url }} | .",
           "url": "https://fp.justin.vc/robots.txt",
@@ -45,6 +64,9 @@
           "date": ""
       }
       
+  
+
+  
   
 
 }
