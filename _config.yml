@@ -7,6 +7,9 @@
 # https://learnxinyminutes.com/docs/yaml/
 
 title: fp.justin.vc
+author:
+  name: Justin
+  email: fp-contact@hirejust.in
 description: 
 github_username: BrickFrog
 # you can comment the below line out if your repo name is not different than your baseurl
@@ -40,6 +43,10 @@ baseurl: "" # the subpath of your site, e.g. "/blog".
 minima:
   social_links:
     github: brickfrog
+    gitlab: brickfrog
+    linkedin: justin-tm
+    stackoverflow: "12568287"
+    devto: brickfrog
 
 # Set this to true to get LaTeX math equation support
 use_math: true
