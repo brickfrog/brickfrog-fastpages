@@ -177,7 +177,7 @@ plot(group_df.erano, group_df.count)
 
 
     
-![svg](analysis_and_tips_julia_files/analysis_and_tips_julia_7_0.svg)
+![svg](_posts/mdimages/analysis_and_tips_julia_7_0.svg)
     
 
 
@@ -341,7 +341,7 @@ plot(by_era_correlation)
 
 
     
-![svg](analysis_and_tips_julia_files/analysis_and_tips_julia_18_0.svg)
+![svg](_posts/mdimages/analysis_and_tips_julia_18_0.svg)
     
 
 
@@ -365,7 +365,7 @@ plot(Dict(zip(collect(n_window-1:length(by_era_correlation)),
 
 
     
-![svg](analysis_and_tips_julia_files/analysis_and_tips_julia_19_0.svg)
+![svg](_posts/mdimages/analysis_and_tips_julia_19_0.svg)
     
 
 
@@ -531,7 +531,7 @@ heatmap(log_corrs,  c=palette(:RdYlGn))
 
 
     
-![svg](analysis_and_tips_julia_files/analysis_and_tips_julia_30_1.svg)
+![svg](_posts/mdimages/analysis_and_tips_julia_30_1.svg)
     
 
 
@@ -700,7 +700,7 @@ heatmap(clamp!(Matrix(select(results_df, Not(:train_era))), -.04, .04),  c=palet
 
 
     
-![svg](analysis_and_tips_julia_files/analysis_and_tips_julia_40_0.svg)
+![svg](_posts/mdimages/analysis_and_tips_julia_40_0.svg)
     
 
 
