@@ -4,13 +4,13 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="twitter:card" content="summary_large_image" /><!-- Begin Jekyll SEO tag v2.6.1 -->
-<title>Numerai Tips &amp; Tricks in Julia! | fp.justin.vc</title>
+<title>Numerai Analysis &amp; Tips in Julia! | fp.justin.vc</title>
 <meta name="generator" content="Jekyll v4.1.1" />
-<meta property="og:title" content="Numerai Tips &amp; Tricks in Julia!" />
+<meta property="og:title" content="Numerai Analysis &amp; Tips in Julia!" />
 <meta name="author" content="Justin" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="This post is a (near) 1:1 replication of the Python tips &amp; tricks for the Numerai data science competition." />
-<meta property="og:description" content="This post is a (near) 1:1 replication of the Python tips &amp; tricks for the Numerai data science competition." />
+<meta name="description" content="This post is a (near) 1:1 replication of the Python Jupyter notebook analysis &amp; tips for the Numerai data science competition, but written in Julia" />
+<meta property="og:description" content="This post is a (near) 1:1 replication of the Python Jupyter notebook analysis &amp; tips for the Numerai data science competition, but written in Julia" />
 <link rel="canonical" href="https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html" />
 <meta property="og:url" content="https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html" />
 <meta property="og:site_name" content="fp.justin.vc" />
@@ -18,7 +18,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2021-07-14T00:00:00-05:00" />
 <script type="application/ld+json">
-{"url":"https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html","@type":"BlogPosting","author":{"@type":"Person","name":"Justin"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html"},"image":"https://fp.justin.vc/images/numerai.png","headline":"Numerai Tips &amp; Tricks in Julia!","dateModified":"2021-07-14T00:00:00-05:00","datePublished":"2021-07-14T00:00:00-05:00","description":"This post is a (near) 1:1 replication of the Python tips &amp; tricks for the Numerai data science competition.","@context":"https://schema.org"}</script>
+{"url":"https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html","@type":"BlogPosting","author":{"@type":"Person","name":"Justin"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://fp.justin.vc/numerai/mlj/scikit-learn/datascience/julia/2021/07/14/analysis-and-tips-julia.html"},"image":"https://fp.justin.vc/images/numerai.png","headline":"Numerai Analysis &amp; Tips in Julia!","dateModified":"2021-07-14T00:00:00-05:00","datePublished":"2021-07-14T00:00:00-05:00","description":"This post is a (near) 1:1 replication of the Python Jupyter notebook analysis &amp; tips for the Numerai data science competition, but written in Julia","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://fp.justin.vc/feed.xml" title="fp.justin.vc" /><!-- the google_analytics_id gets auto inserted from the config file -->
 
@@ -104,7 +104,7 @@ window.onload = wrap_img;
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Numerai Tips &amp; Tricks in Julia!</h1><p class="page-description">This post is a (near) 1:1 replication of the Python tips & tricks for the Numerai data science competition.</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-07-14T00:00:00-05:00" itemprop="datePublished">
+    <h1 class="post-title p-name" itemprop="name headline">Numerai Analysis &amp; Tips in Julia!</h1><p class="page-description">This post is a (near) 1:1 replication of the Python Jupyter notebook analysis & tips for the Numerai data science competition, but written in Julia</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-07-14T00:00:00-05:00" itemprop="datePublished">
         Jul 14, 2021
       </time>
        • <span class="read-time" title="Estimated read time">
@@ -257,7 +257,7 @@ PyObject &lt;function make_scorer at 0x000000008F07CA60&gt;
 <span class="n">plot</span><span class="x">(</span><span class="n">group_df</span><span class="o">.</span><span class="n">erano</span><span class="x">,</span> <span class="n">group_df</span><span class="o">.</span><span class="n">count</span><span class="x">)</span>
 </code></pre></div></div>
 
-<p><img src="_posts/mdimages/analysis_and_tips_julia_7_0.svg" alt="svg" /></p>
+<p><img src="images/analysis_and_tips_julia_7_0.svg" alt="svg" /></p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WARNING: CPU random generator seem to be failing, disabling hardware random number generation
 WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
@@ -369,7 +369,7 @@ WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
 <span class="n">plot</span><span class="x">(</span><span class="n">by_era_correlation</span><span class="x">)</span>
 </code></pre></div></div>
 
-<p><img src="_posts/mdimages/analysis_and_tips_julia_18_0.svg" alt="svg" /></p>
+<p><img src="images/analysis_and_tips_julia_18_0.svg" alt="svg" /></p>
 
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># With a rolling 10 era average you can see some trends</span>
 
@@ -384,7 +384,7 @@ WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
         <span class="n">rolling_mean</span><span class="x">(</span><span class="n">collect</span><span class="x">(</span><span class="n">values</span><span class="x">(</span><span class="n">by_era_correlation</span><span class="x">)),</span><span class="n">n_window</span><span class="x">))))</span>
 </code></pre></div></div>
 
-<p><img src="_posts/mdimages/analysis_and_tips_julia_19_0.svg" alt="svg" /></p>
+<p><img src="images/analysis_and_tips_julia_19_0.svg" alt="svg" /></p>
 
 <h1 id="gotcha-mse-looks-worse-than-correlation-out-of-sample">Gotcha: MSE looks worse than correlation out of sample</h1>
 <p>Models will generally be overconfident, so even if they are good at ranking rows, the Mean-Squared-Error of the residuals could be larger than event the Mean-Squared-Error of the target (r-squared&lt;0)</p>
@@ -503,7 +503,7 @@ Please also refer to the documentation for alternative solver options:
   0.947252   0.428423  -0.914418   0.498854   1.0
 </code></pre></div></div>
 
-<p><img src="_posts/mdimages/analysis_and_tips_julia_30_1.svg" alt="svg" /></p>
+<p><img src="images/analysis_and_tips_julia_30_1.svg" alt="svg" /></p>
 
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># In-sample correlation</span>
 
@@ -632,7 +632,7 @@ PyObject TimeSeriesSplit(gap=0, max_train_size=None, n_splits=5, test_size=None)
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">heatmap</span><span class="x">(</span><span class="n">clamp!</span><span class="x">(</span><span class="kt">Matrix</span><span class="x">(</span><span class="n">select</span><span class="x">(</span><span class="n">results_df</span><span class="x">,</span> <span class="n">Not</span><span class="x">(</span><span class="o">:</span><span class="n">train_era</span><span class="x">))),</span> <span class="o">-.</span><span class="mi">04</span><span class="x">,</span> <span class="o">.</span><span class="mi">04</span><span class="x">),</span>  <span class="n">c</span><span class="o">=</span><span class="n">palette</span><span class="x">(</span><span class="o">:</span><span class="n">RdYlGn</span><span class="x">))</span>
 </code></pre></div></div>
 
-<p><img src="_posts/mdimages/analysis_and_tips_julia_40_0.svg" alt="svg" /></p>
+<p><img src="images/analysis_and_tips_julia_40_0.svg" alt="svg" /></p>
 
 <p>Here is an advanced paper that talks about generalization.
 Eras can be thought about in the same way that “distributions” or “environments” are talked about here
