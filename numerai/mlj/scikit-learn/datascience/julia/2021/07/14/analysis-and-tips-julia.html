@@ -257,7 +257,7 @@ PyObject &lt;function make_scorer at 0x000000008F07CA60&gt;
 <span class="n">plot</span><span class="x">(</span><span class="n">group_df</span><span class="o">.</span><span class="n">erano</span><span class="x">,</span> <span class="n">group_df</span><span class="o">.</span><span class="n">count</span><span class="x">)</span>
 </code></pre></div></div>
 
-<p><img src="analysis_and_tips_julia_files/analysis_and_tips_julia_7_0.svg" alt="svg" /></p>
+<p><img src="_posts/mdimages/analysis_and_tips_julia_7_0.svg" alt="svg" /></p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WARNING: CPU random generator seem to be failing, disabling hardware random number generation
 WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
@@ -369,7 +369,7 @@ WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
 <span class="n">plot</span><span class="x">(</span><span class="n">by_era_correlation</span><span class="x">)</span>
 </code></pre></div></div>
 
-<p><img src="analysis_and_tips_julia_files/analysis_and_tips_julia_18_0.svg" alt="svg" /></p>
+<p><img src="_posts/mdimages/analysis_and_tips_julia_18_0.svg" alt="svg" /></p>
 
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># With a rolling 10 era average you can see some trends</span>
 
@@ -384,7 +384,7 @@ WARNING: RDRND generated: 0xffffffff 0xffffffff 0xffffffff 0xffffffff
         <span class="n">rolling_mean</span><span class="x">(</span><span class="n">collect</span><span class="x">(</span><span class="n">values</span><span class="x">(</span><span class="n">by_era_correlation</span><span class="x">)),</span><span class="n">n_window</span><span class="x">))))</span>
 </code></pre></div></div>
 
-<p><img src="analysis_and_tips_julia_files/analysis_and_tips_julia_19_0.svg" alt="svg" /></p>
+<p><img src="_posts/mdimages/analysis_and_tips_julia_19_0.svg" alt="svg" /></p>
 
 <h1 id="gotcha-mse-looks-worse-than-correlation-out-of-sample">Gotcha: MSE looks worse than correlation out of sample</h1>
 <p>Models will generally be overconfident, so even if they are good at ranking rows, the Mean-Squared-Error of the residuals could be larger than event the Mean-Squared-Error of the target (r-squared&lt;0)</p>
@@ -503,7 +503,7 @@ Please also refer to the documentation for alternative solver options:
   0.947252   0.428423  -0.914418   0.498854   1.0
 </code></pre></div></div>
 
-<p><img src="analysis_and_tips_julia_files/analysis_and_tips_julia_30_1.svg" alt="svg" /></p>
+<p><img src="_posts/mdimages/analysis_and_tips_julia_30_1.svg" alt="svg" /></p>
 
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># In-sample correlation</span>
 
@@ -632,7 +632,7 @@ PyObject TimeSeriesSplit(gap=0, max_train_size=None, n_splits=5, test_size=None)
 <div class="language-julia highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">heatmap</span><span class="x">(</span><span class="n">clamp!</span><span class="x">(</span><span class="kt">Matrix</span><span class="x">(</span><span class="n">select</span><span class="x">(</span><span class="n">results_df</span><span class="x">,</span> <span class="n">Not</span><span class="x">(</span><span class="o">:</span><span class="n">train_era</span><span class="x">))),</span> <span class="o">-.</span><span class="mi">04</span><span class="x">,</span> <span class="o">.</span><span class="mi">04</span><span class="x">),</span>  <span class="n">c</span><span class="o">=</span><span class="n">palette</span><span class="x">(</span><span class="o">:</span><span class="n">RdYlGn</span><span class="x">))</span>
 </code></pre></div></div>
 
-<p><img src="analysis_and_tips_julia_files/analysis_and_tips_julia_40_0.svg" alt="svg" /></p>
+<p><img src="_posts/mdimages/analysis_and_tips_julia_40_0.svg" alt="svg" /></p>
 
 <p>Here is an advanced paper that talks about generalization.
 Eras can be thought about in the same way that “distributions” or “environments” are talked about here
