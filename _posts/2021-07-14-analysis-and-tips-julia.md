@@ -1,6 +1,6 @@
 ---
 title: "Numerai Tips & Tricks in Julia!"
-description: "Numerai is a data science competition that uses non-standard metrics for scoring. This post is a replication (mostly) of the Python "tips and tricks Jupyter notebook."
+description: "This post is a (near) 1:1 replication of the Python tips & tricks for the Numerai data science competition."
 layout: post
 toc: false
 comments: true
@@ -730,7 +730,7 @@ dall = DMatrix(Matrix(df[!, features]), label=df.target);
 
 
 ```julia
-# This part I wasn't abel to replicate perfectly, XGBoost on Julia seems to(?) lack an evals_result to push the data into
+# This part I wasn't able to replicate perfectly, XGBoost on Julia seems to(?) lack an evals_result to push the data into
 # the source code shows only that it prints to stderr - one could redirect it to an IOBuffer and regex parse it into an
 # array but realistically the amount of effort isn't worth it, since one can clearly see the out-of-sample performance 
 # differneces purely from the numbers printed
