@@ -1,6 +1,6 @@
 ---
-title: "Numerai Tips & Tricks in Julia!"
-description: "This post is a (near) 1:1 replication of the Python tips & tricks for the Numerai data science competition."
+title: "Numerai Analysis & Tips in Julia!"
+description: "This post is a (near) 1:1 replication of the Python Jupyter notebook analysis & tips for the Numerai data science competition, but written in Julia"
 layout: post
 toc: false
 comments: true
@@ -177,7 +177,7 @@ plot(group_df.erano, group_df.count)
 
 
     
-![svg](_posts/mdimages/analysis_and_tips_julia_7_0.svg)
+![svg](images/analysis_and_tips_julia_7_0.svg)
     
 
 
@@ -341,7 +341,7 @@ plot(by_era_correlation)
 
 
     
-![svg](_posts/mdimages/analysis_and_tips_julia_18_0.svg)
+![svg](images/analysis_and_tips_julia_18_0.svg)
     
 
 
@@ -365,7 +365,7 @@ plot(Dict(zip(collect(n_window-1:length(by_era_correlation)),
 
 
     
-![svg](_posts/mdimages/analysis_and_tips_julia_19_0.svg)
+![svg](images/analysis_and_tips_julia_19_0.svg)
     
 
 
@@ -531,7 +531,7 @@ heatmap(log_corrs,  c=palette(:RdYlGn))
 
 
     
-![svg](_posts/mdimages/analysis_and_tips_julia_30_1.svg)
+![svg](images/analysis_and_tips_julia_30_1.svg)
     
 
 
@@ -700,7 +700,7 @@ heatmap(clamp!(Matrix(select(results_df, Not(:train_era))), -.04, .04),  c=palet
 
 
     
-![svg](_posts/mdimages/analysis_and_tips_julia_40_0.svg)
+![svg](images/analysis_and_tips_julia_40_0.svg)
     
 
 
